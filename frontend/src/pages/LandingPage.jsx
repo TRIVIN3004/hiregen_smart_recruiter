@@ -39,14 +39,17 @@ const LandingPage = () => {
             </Link>
           ) : (
             <>
-              <Link to="/login" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">
+              <Link 
+                to="/login" 
+                className="px-6 py-3 rounded-xl border-2 border-slate-700 hover:border-primary-500 bg-slate-900/60 hover:bg-slate-800 text-white text-sm font-bold transition-all hover:scale-[1.02]"
+              >
                 Sign In
               </Link>
               <Link 
                 to="/register" 
-                className="px-5 py-2.5 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800/80 hover:border-slate-700 text-white text-sm font-semibold transition-all hover:scale-[1.02]"
+                className="px-6 py-3 rounded-xl bg-gradient-to-r from-primary-600 to-amber-600 hover:from-primary-500 hover:to-amber-500 text-white text-sm font-bold shadow-lg shadow-primary-600/30 transition-all hover:scale-[1.02]"
               >
-                Get Started
+                Sign Up
               </Link>
             </>
           )}
@@ -69,20 +72,41 @@ const LandingPage = () => {
           Unlock instant resume parsing, accurate ATS scores, mock voice interviews, programming assessments, and visual candidate ranking.
         </p>
 
-        <div className="flex flex-col sm:flex-row gap-4 mb-20">
+        <div className="flex flex-col sm:flex-row gap-4 mb-8">
           <Link 
             to="/register" 
             className="px-8 py-4 rounded-xl bg-gradient-to-r from-primary-600 to-amber-600 hover:from-primary-500 hover:to-amber-500 text-white font-semibold shadow-xl shadow-primary-600/30 flex items-center justify-center gap-2 transition-all hover:scale-[1.03] group"
           >
-            <span>Start Hiring Now</span>
+            <span>Sign Up Now</span>
             <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
           </Link>
-          <a 
-            href="#features" 
+          <Link 
+            to="/login" 
             className="px-8 py-4 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800/80 hover:border-slate-700 text-white font-semibold flex items-center justify-center gap-2 transition-all hover:scale-[1.03]"
           >
-            Explore Features
-          </a>
+            Sign In
+          </Link>
+        </div>
+
+        {/* Dedicated CTA callout */}
+        <div className="w-full max-w-2xl mb-12 p-6 rounded-2xl border border-primary-500/20 bg-primary-500/5 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p className="text-sm text-slate-300 text-center sm:text-left">
+            Already screening candidates elsewhere? Bring your hiring pipeline to HireGen AI in minutes.
+          </p>
+          <div className="flex gap-3 shrink-0">
+            <Link 
+              to="/login" 
+              className="px-5 py-2.5 rounded-lg bg-slate-900 border border-slate-800 hover:border-primary-500 text-white text-xs font-bold transition-all"
+            >
+              Sign In
+            </Link>
+            <Link 
+              to="/register" 
+              className="px-5 py-2.5 rounded-lg bg-gradient-to-r from-primary-600 to-amber-600 hover:from-primary-500 hover:to-amber-500 text-white text-xs font-bold shadow-md shadow-primary-600/30 transition-all"
+            >
+              Sign Up
+            </Link>
+          </div>
         </div>
 
         {/* Dashboard Mockup Representation */}

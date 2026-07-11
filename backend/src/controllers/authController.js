@@ -16,6 +16,10 @@ exports.register = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
 
+    // Only candidate and admin roles may self-register through this platform
+    const allowedRoles = ['candidate', 'admin'];
+    const resolvedRole = allowedRoles.includes(role) ? role : 'candidate';
+
     // Check if user exists
     const userExists = await User.findOne({ email });
     if (userExists) {
@@ -28,7 +32,7 @@ exports.register = async (req, res) => {
       name,
       email,
       password,
-      role: role || 'candidate',
+      role: resolvedRole,
       isVerified: false,
       verificationToken
     });

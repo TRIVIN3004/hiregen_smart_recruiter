@@ -13,10 +13,13 @@ import Register from './pages/Register';
 import CandidateDashboard from './pages/CandidateDashboard';
 import MockInterview from './pages/MockInterview';
 import CodingTest from './pages/CodingTest';
+import AptitudeTest from './pages/AptitudeTest';
 import RecruiterDashboard from './pages/RecruiterDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminUsers from './pages/AdminUsers';
 import AdminLogs from './pages/AdminLogs';
+import AdminCandidates from './pages/AdminCandidates';
+import AdminAnnouncements from './pages/AdminAnnouncements';
 import JobListings from './pages/JobListings';
 import Profile from './pages/Profile';
 
@@ -81,6 +84,15 @@ const App = () => {
                 </RoleRoute>
               </ProtectedRoute>
             } />
+            <Route path="/candidate/aptitude" element={
+              <ProtectedRoute>
+                <RoleRoute allowedRoles={['candidate']}>
+                  <DashboardLayout>
+                    <AptitudeTest />
+                  </DashboardLayout>
+                </RoleRoute>
+              </ProtectedRoute>
+            } />
 
             {/* Recruiter Board */}
             <Route path="/recruiter" element={
@@ -117,6 +129,24 @@ const App = () => {
                 <RoleRoute allowedRoles={['admin']}>
                   <DashboardLayout>
                     <AdminLogs />
+                  </DashboardLayout>
+                </RoleRoute>
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/candidates" element={
+              <ProtectedRoute>
+                <RoleRoute allowedRoles={['admin']}>
+                  <DashboardLayout>
+                    <AdminCandidates />
+                  </DashboardLayout>
+                </RoleRoute>
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/announcements" element={
+              <ProtectedRoute>
+                <RoleRoute allowedRoles={['admin']}>
+                  <DashboardLayout>
+                    <AdminAnnouncements />
                   </DashboardLayout>
                 </RoleRoute>
               </ProtectedRoute>

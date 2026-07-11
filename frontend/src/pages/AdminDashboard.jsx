@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Shield, Users, Briefcase, FileCheck, HelpCircle, Activity, Settings, Save, AlertCircle } from 'lucide-react';
+import { Shield, Users, Briefcase, FileCheck, HelpCircle, Activity, Settings, Save, AlertCircle, Trophy, Megaphone, CheckSquare } from 'lucide-react';
 import axios from 'axios';
 
 const AdminDashboard = () => {
@@ -162,6 +162,34 @@ const AdminDashboard = () => {
           <h3 className="font-display font-bold text-lg text-white">System Controls</h3>
           
           <div className="flex flex-col gap-4">
+            <Link 
+              to="/admin/candidates"
+              className="p-4 rounded-2xl border border-slate-900/60 bg-slate-950/20 hover:border-slate-850 hover:bg-slate-900/10 transition-colors flex items-center justify-between"
+            >
+              <div className="flex items-center gap-3">
+                <Trophy size={18} className="text-amber-400" />
+                <div className="flex flex-col">
+                  <span className="font-semibold text-xs text-white">Candidate Performance</span>
+                  <span className="text-[10px] text-slate-500">Ranked leaderboard & status</span>
+                </div>
+              </div>
+              <ChevronRight size={16} className="text-slate-500" />
+            </Link>
+
+            <Link 
+              to="/admin/announcements"
+              className="p-4 rounded-2xl border border-slate-900/60 bg-slate-950/20 hover:border-slate-850 hover:bg-slate-900/10 transition-colors flex items-center justify-between"
+            >
+              <div className="flex items-center gap-3">
+                <Megaphone size={18} className="text-violet-400" />
+                <div className="flex flex-col">
+                  <span className="font-semibold text-xs text-white">Announcements</span>
+                  <span className="text-[10px] text-slate-500">Notify all candidates instantly</span>
+                </div>
+              </div>
+              <ChevronRight size={16} className="text-slate-500" />
+            </Link>
+
             <Link 
               to="/admin/users"
               className="p-4 rounded-2xl border border-slate-900/60 bg-slate-950/20 hover:border-slate-850 hover:bg-slate-900/10 transition-colors flex items-center justify-between"

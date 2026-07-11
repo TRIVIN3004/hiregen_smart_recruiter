@@ -5,7 +5,7 @@ import { useTheme } from '../context/ThemeContext';
 import { 
   LayoutDashboard, Briefcase, FileText, Bot, 
   Terminal, User, Settings, LogOut, Menu, X, 
-  Bell, Moon, Sun, Shield, Users, Activity 
+  Bell, Moon, Sun, Shield, Users, Activity, ListChecks, Trophy, Megaphone 
 } from 'lucide-react';
 import axios from 'axios';
 
@@ -83,6 +83,8 @@ const DashboardLayout = ({ children }) => {
     if (user.role === 'admin') {
       return [
         makeLink('/admin', 'Admin Dashboard', <LayoutDashboard size={18} />),
+        makeLink('/admin/candidates', 'Candidate Performance', <Trophy size={18} />),
+        makeLink('/admin/announcements', 'Announcements', <Megaphone size={18} />),
         makeLink('/admin/users', 'Manage Users', <Users size={18} />),
         makeLink('/admin/logs', 'Audit Logs', <Activity size={18} />),
         makeLink('/jobs', 'All Jobs', <Briefcase size={18} />),
@@ -98,9 +100,9 @@ const DashboardLayout = ({ children }) => {
       // Candidate
       return [
         makeLink('/candidate', 'Candidate Home', <LayoutDashboard size={18} />),
-        makeLink('/jobs', 'Search Jobs', <Briefcase size={18} />),
         makeLink('/candidate/interview', 'AI Mock Interview', <Bot size={18} />),
         makeLink('/candidate/coding', 'Coding Test', <Terminal size={18} />),
+        makeLink('/candidate/aptitude', 'Aptitude Test', <ListChecks size={18} />),
         makeLink('/profile', 'Resume & Profile', <FileText size={18} />)
       ];
     }

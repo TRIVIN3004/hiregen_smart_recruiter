@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { User, Mail, Lock, ArrowRight, AlertCircle, Loader, UserSquare, Briefcase, ShieldCheck } from 'lucide-react';
+import { User, Mail, Lock, ArrowRight, AlertCircle, Loader, UserSquare, ShieldCheck } from 'lucide-react';
 
 const Register = () => {
   const { register } = useAuth();
@@ -9,7 +9,7 @@ const Register = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('candidate'); // candidate, recruiter, admin
+  const [role, setRole] = useState('candidate'); // candidate, admin
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -33,7 +33,6 @@ const Register = () => {
 
     if (result.success) {
       if (role === 'admin') navigate('/admin');
-      else if (role === 'recruiter') navigate('/recruiter');
       else navigate('/candidate');
     } else {
       setError(result.error);
@@ -67,7 +66,7 @@ const Register = () => {
             {/* Role picker */}
             <div>
               <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 text-center">Select Your Profile Role</label>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
                   onClick={() => setRole('candidate')}
@@ -78,18 +77,6 @@ const Register = () => {
                 >
                   <UserSquare size={18} />
                   <span>Candidate</span>
-                </button>
-                
-                <button
-                  type="button"
-                  onClick={() => setRole('recruiter')}
-                  className={`flex flex-col items-center gap-2 p-3.5 rounded-xl border text-xs font-semibold transition-all duration-200
-                    ${role === 'recruiter' 
-                      ? 'bg-cyan-600/10 border-cyan-500 text-cyan-400 shadow-lg shadow-cyan-500/5' 
-                      : 'bg-slate-900/40 border-slate-800 text-slate-500 hover:text-slate-350 hover:bg-slate-900'}`}
-                >
-                  <Briefcase size={18} />
-                  <span>Recruiter</span>
                 </button>
 
                 <button

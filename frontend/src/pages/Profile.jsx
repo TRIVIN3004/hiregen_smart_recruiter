@@ -1,11 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { User, FileText, CheckCircle, Save, Plus, Trash2, Mail, Phone, MapPin, Briefcase, GraduationCap } from 'lucide-react';
+import { User, FileText, CheckCircle, Save, Plus, Trash2, Mail, Phone, MapPin, Briefcase, GraduationCap, UploadCloud, Star, ThumbsUp, ThumbsDown, Lightbulb, Loader2 } from 'lucide-react';
 import axios from 'axios';
 
 const Profile = () => {
   const { user, updateLocalProfile } = useAuth();
-  
+
+  // State for Resume Upload + AI Quality Summary
+  const [resumeFile, setResumeFile] = useState(null);
+  const [resumeUploading, setResumeUploading] = useState(false);
+  const [resumeError, setResumeError] = useState('');
+  const [qualitySummary, setQualitySummary] = useState(null);
+
   // State for Candidate profiles
   const [title, setTitle] = useState('');
   const [phone, setPhone] = useState('');
@@ -88,6 +94,56 @@ const Profile = () => {
     setExperience(prev => prev.map((exp, idx) => idx === index ? { ...exp, [field]: value } : exp));
   };
 
+  // Resume upload + AI quality summary helpers
+  const handleResumeFileChange = (e) => {
+    const file = e.target.files?.[0];
+    setResumeError('');
+    if (file && file.type !== 'application/pdf') {
+      setResumeError('Please select a PDF file.');
+      setResumeFile(null);
+      return;
+    }
+    setResumeFile(file);
+  };
+
+  const handleResumeUpload = async () => {
+    if (!resumeFile) {
+      setResumeError('Please choose a PDF resume first.');
+      return;
+    }
+    setResumeUploading(true);
+    setResumeError('');
+    setQualitySummary(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', resumeFile);
+
+      const res = await axios.post('/api/candidate/resume/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      if (res.data.success) {
+        const { profile, qualityAssessment } = res.data.data;
+        if (profile) {
+          updateLocalProfile(profile);
+          // Reflect newly parsed data into the form fields
+          setSkills(profile.skills || []);
+          setExperience(profile.experience || []);
+          setEducation(profile.education || []);
+        }
+        if (qualityAssessment) {
+          setQualitySummary(qualityAssessment);
+        }
+        setMessage('Resume uploaded and analyzed successfully!');
+      }
+    } catch (err) {
+      setResumeError('Failed to upload/analyze resume: ' + (err.response?.data?.error || err.message));
+    } finally {
+      setResumeUploading(false);
+    }
+  };
+
   const handleSaveProfile = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -126,6 +182,105 @@ const Profile = () => {
           <div className="p-4 rounded-xl bg-violet-500/10 border border-violet-500/20 text-violet-400 text-xs flex items-center gap-2">
             <CheckCircle size={16} />
             <span>{message}</span>
+          </div>
+        )}
+
+        {/* SECTION 0: Resume Upload + AI Quality Summary (Candidates only) */}
+        {user?.role === 'candidate' && (
+          <div className="glass p-6 md:p-8 rounded-3xl border border-slate-900/60 flex flex-col gap-5">
+            <h3 className="font-display font-bold text-sm text-white flex items-center gap-2">
+              <UploadCloud size={16} className="text-violet-400" />
+              <span>Resume Upload &amp; AI Quality Summary</span>
+            </h3>
+            <p className="text-xs text-slate-400 -mt-2">
+              Upload your resume as a PDF to auto-fill your profile and get an instant AI-generated quality assessment.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-3">
+              <label className="flex-1 flex items-center gap-3 px-4 py-3 bg-slate-900 border border-dashed border-slate-800 hover:border-violet-500/50 rounded-xl text-xs text-slate-300 cursor-pointer transition-colors">
+                <UploadCloud size={16} className="text-slate-500 shrink-0" />
+                <span className="truncate">{resumeFile ? resumeFile.name : 'Choose a PDF resume...'}</span>
+                <input type="file" accept="application/pdf" className="hidden" onChange={handleResumeFileChange} />
+              </label>
+              <button
+                type="button"
+                onClick={handleResumeUpload}
+                disabled={resumeUploading}
+                className="px-6 py-3 rounded-xl bg-gradient-to-r from-primary-600 to-amber-600 hover:from-primary-500 hover:to-amber-500 text-white text-xs font-semibold shadow-md shadow-primary-600/25 flex items-center justify-center gap-2 transition-all disabled:opacity-60"
+              >
+                {resumeUploading ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" />
+                    <span>Analyzing...</span>
+                  </>
+                ) : (
+                  <span>Upload &amp; Analyze</span>
+                )}
+              </button>
+            </div>
+
+            {resumeError && (
+              <div className="text-xs text-red-400 bg-red-500/5 border border-red-500/20 rounded-xl px-4 py-2.5">
+                {resumeError}
+              </div>
+            )}
+
+            {qualitySummary && (
+              <div className="mt-2 p-5 rounded-2xl border border-violet-500/20 bg-violet-500/5 flex flex-col gap-4">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <Star size={16} className="text-amber-400" />
+                    <span className="text-sm font-bold text-white">
+                      AI Quality Rating: {qualitySummary.rating ?? '—'}/10
+                    </span>
+                    {qualitySummary.rating_label && (
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-violet-500/10 border border-violet-500/25 text-violet-400">
+                        {qualitySummary.rating_label}
+                      </span>
+                    )}
+                  </div>
+                  {qualitySummary.hire_recommendation && (
+                    <span className="text-[11px] font-semibold text-slate-400">
+                      Recommendation: <span className="text-white">{qualitySummary.hire_recommendation}</span>
+                    </span>
+                  )}
+                </div>
+
+                {qualitySummary.summary && (
+                  <p className="text-xs text-slate-300 leading-relaxed">{qualitySummary.summary}</p>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="flex flex-col gap-2">
+                    <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                      <ThumbsUp size={12} />
+                      <span>Strengths</span>
+                    </span>
+                    <ul className="flex flex-col gap-1.5 text-[11px] text-slate-300 list-disc pl-4">
+                      {(qualitySummary.strengths || []).map((s, i) => <li key={i}>{s}</li>)}
+                    </ul>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <span className="text-[11px] font-bold text-red-400 uppercase tracking-wider flex items-center gap-1.5">
+                      <ThumbsDown size={12} />
+                      <span>Weaknesses</span>
+                    </span>
+                    <ul className="flex flex-col gap-1.5 text-[11px] text-slate-300 list-disc pl-4">
+                      {(qualitySummary.weaknesses || []).map((w, i) => <li key={i}>{w}</li>)}
+                    </ul>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <span className="text-[11px] font-bold text-primary-400 uppercase tracking-wider flex items-center gap-1.5">
+                      <Lightbulb size={12} />
+                      <span>Suggestions</span>
+                    </span>
+                    <ul className="flex flex-col gap-1.5 text-[11px] text-slate-300 list-disc pl-4">
+                      {(qualitySummary.improvement_suggestions || []).map((s, i) => <li key={i}>{s}</li>)}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

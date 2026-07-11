@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { Mail, Lock, ArrowRight, AlertCircle, Loader } from 'lucide-react';
 
 const Login = () => {
-  const { login, user } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -14,7 +14,7 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    
+
     if (!email || !password) {
       setError('Please fill in all fields');
       return;
@@ -25,34 +25,11 @@ const Login = () => {
     setLoading(false);
 
     if (result.success) {
-      // Fetch user profile and redirect depending on role
-      // We will read user profile inside AuthContext
-      // Let's redirect based on role
-      const checkSessionAndRedirect = (role) => {
-        if (role === 'admin') navigate('/admin');
-        else if (role === 'recruiter') navigate('/recruiter');
-        else navigate('/candidate');
-      };
-      
-      // Set brief delay to let state update
-      setTimeout(() => {
-        const storedToken = localStorage.getItem('token');
-        if (storedToken) {
-          // Check role again
-          axios.get('/api/auth/me')
-            .then(res => {
-              if (res.data.success) {
-                checkSessionAndRedirect(res.data.user.role);
-              }
-            })
-            .catch(() => {
-              // Fallback
-              checkSessionAndRedirect('candidate');
-            });
-        } else {
-          checkSessionAndRedirect('candidate');
-        }
-      }, 300);
+      // Go straight to the correct dashboard based on the logged-in user's role
+      const role = result.user?.role;
+      if (role === 'admin') navigate('/admin');
+      else if (role === 'recruiter') navigate('/recruiter');
+      else navigate('/candidate');
     } else {
       setError(result.error);
     }
@@ -142,8 +119,5 @@ const Login = () => {
     </div>
   );
 };
-
-// Internal imports configuration
-import axios from 'axios';
 
 export default Login;

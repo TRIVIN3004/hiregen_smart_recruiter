@@ -60,6 +60,45 @@ const codingResultSchema = new mongoose.Schema({
     required: true
   },
   feedback: String,
+  cheatingDetected: {
+    type: Boolean,
+    default: false
+  },
+  cheatingReasoning: String,
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
+const aptitudeResultSchema = new mongoose.Schema({
+  candidate: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  totalQuestions: {
+    type: Number,
+    required: true,
+    default: 30
+  },
+  correctAnswers: {
+    type: Number,
+    required: true
+  },
+  passed: {
+    type: Boolean,
+    required: true
+  },
+  answers: [{
+    questionId: Number,
+    category: String,
+    question: String,
+    selectedIndex: Number,
+    correctIndex: Number,
+    isCorrect: Boolean
+  }],
+  timeTakenSeconds: Number,
   createdAt: {
     type: Date,
     default: Date.now
@@ -68,5 +107,6 @@ const codingResultSchema = new mongoose.Schema({
 
 const InterviewResult = mongoose.model('InterviewResult', interviewResultSchema);
 const CodingResult = mongoose.model('CodingResult', codingResultSchema);
+const AptitudeResult = mongoose.model('AptitudeResult', aptitudeResultSchema);
 
-module.exports = { InterviewResult, CodingResult };
+module.exports = { InterviewResult, CodingResult, AptitudeResult };

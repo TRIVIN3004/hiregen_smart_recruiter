@@ -1,7 +1,6 @@
 from fastapi import APIRouter, File, UploadFile, Form, HTTPException
 from typing import List, Optional
 from pydantic import BaseModel
-import fitz  # PyMuPDF
 import pdfplumber
 import io
 import logging
@@ -22,6 +21,11 @@ class TranscriptItem(BaseModel):
 class EvaluationRequest(BaseModel):
     transcript: List[TranscriptItem]
 
+class CodingEvaluationRequest(BaseModel):
+    problem: str
+    language: str
+    code: str
+
 def extract_text_from_pdf(file_bytes: bytes, filename: str) -> str:
     """
     Extracts text from PDF bytes using fitz (PyMuPDF) and falls back to pdfplumber.
@@ -35,20 +39,7 @@ def extract_text_from_pdf(file_bytes: bytes, filename: str) -> str:
         except Exception:
             raise HTTPException(status_code=400, detail="Unsupported file format. Please upload a PDF.")
 
-    # 1. Try PyMuPDF (fitz)
-    try:
-        logger.info("Attempting PyMuPDF extraction")
-        doc = fitz.open(stream=file_bytes, filetype="pdf")
-        for page in doc:
-            text += page.get_text()
-        doc.close()
-        
-        if text.strip():
-            return text
-    except Exception as e:
-        logger.warning(f"PyMuPDF extraction failed: {e}. Trying pdfplumber...")
-
-    # 2. Fallback to pdfplumber
+    # 1. Try pdfplumber extraction
     try:
         logger.info("Attempting pdfplumber extraction")
         with pdfplumber.open(io.BytesIO(file_bytes)) as pdf:
@@ -126,4 +117,20 @@ async def evaluate_interview(request: EvaluationRequest):
         }
     except Exception as e:
         logger.error(f"Error evaluating interview: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/coding/evaluate")
+async def evaluate_coding(request: CodingEvaluationRequest):
+    try:
+        evaluation = GeminiService.evaluate_coding_assessment(
+            problem=request.problem,
+            language=request.language,
+            code=request.code
+        )
+        return {
+            "success": True,
+            **evaluation
+        }
+    except Exception as e:
+        logger.error(f"Error evaluating coding test: {e}")
         raise HTTPException(status_code=500, detail=str(e))
