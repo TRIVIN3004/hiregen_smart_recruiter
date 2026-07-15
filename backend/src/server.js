@@ -6,13 +6,17 @@ const path = require('path');
 const fs = require('fs');
 require('dotenv').config();
 
-const connectDB = require('./config/db');
+const supabase = require('./config/supabase');
 const apiRoutes = require('./routes/api');
 
 const app = express();
 
-// Connect to Database
-connectDB();
+// Verify Supabase Connection URL
+if (process.env.SUPABASE_URL) {
+  console.log('Supabase client initialized: ' + process.env.SUPABASE_URL);
+} else {
+  console.warn('WARNING: Supabase connection parameters are missing. Ensure SUPABASE_URL and SUPABASE_KEY are in backend/.env.');
+}
 
 // Security and Logging middlewares
 // Customize Helmet content security policy to allow local dev assets
