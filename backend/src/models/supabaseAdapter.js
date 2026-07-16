@@ -8,6 +8,40 @@ const dbFilePath = path.join(__dirname, 'mock_db.json');
 
 const MEMORY_DB = loadMockDb();
 
+if (!isPlaceholder) {
+  seedSupabaseAdmin();
+}
+
+async function seedSupabaseAdmin() {
+  try {
+    const { data: users, error } = await supabase.from('users').select('*').eq('email', 'testing@nexora.com');
+    if (error) {
+      console.error('Error checking admin user in Supabase:', error.message);
+      return;
+    }
+    if (users && users.length === 0) {
+      console.log('Seeding admin user into Supabase...');
+      const salt = bcrypt.genSaltSync(10);
+      const hashedPassword = bcrypt.hashSync('Trivin@123', salt);
+      const { error: insertError } = await supabase.from('users').insert({
+        id: require('crypto').randomUUID(),
+        name: 'System Administrator',
+        email: 'testing@nexora.com',
+        password: hashedPassword,
+        role: 'admin',
+        is_verified: true
+      });
+      if (insertError) {
+        console.error('Error seeding admin user in Supabase:', insertError.message);
+      } else {
+        console.log('Successfully seeded admin user into Supabase!');
+      }
+    }
+  } catch (err) {
+    console.error('Failed to seed admin in Supabase:', err);
+  }
+}
+
 function loadMockDb() {
   try {
     let db = {};
