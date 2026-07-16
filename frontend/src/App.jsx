@@ -59,7 +59,7 @@ const App = () => {
             {/* Candidate Operations */}
             <Route path="/candidate" element={
               <ProtectedRoute>
-                <RoleRoute allowedRoles={['candidate']}>
+                <RoleRoute allowedRoles={[ 'candidate' ]}>
                   <DashboardLayout>
                     <CandidateDashboard />
                   </DashboardLayout>
@@ -68,7 +68,7 @@ const App = () => {
             } />
             <Route path="/candidate/interview" element={
               <ProtectedRoute>
-                <RoleRoute allowedRoles={['candidate']}>
+                <RoleRoute allowedRoles={[ 'candidate' ]}>
                   <DashboardLayout>
                     <MockInterview />
                   </DashboardLayout>
@@ -77,7 +77,7 @@ const App = () => {
             } />
             <Route path="/candidate/coding" element={
               <ProtectedRoute>
-                <RoleRoute allowedRoles={['candidate']}>
+                <RoleRoute allowedRoles={[ 'candidate' ]}>
                   <DashboardLayout>
                     <CodingTest />
                   </DashboardLayout>
@@ -86,7 +86,7 @@ const App = () => {
             } />
             <Route path="/candidate/aptitude" element={
               <ProtectedRoute>
-                <RoleRoute allowedRoles={['candidate']}>
+                <RoleRoute allowedRoles={[ 'candidate' ]}>
                   <DashboardLayout>
                     <AptitudeTest />
                   </DashboardLayout>
@@ -97,7 +97,7 @@ const App = () => {
             {/* Recruiter Board */}
             <Route path="/recruiter" element={
               <ProtectedRoute>
-                <RoleRoute allowedRoles={['recruiter']}>
+                <RoleRoute allowedRoles={[ 'recruiter' ]}>
                   <DashboardLayout>
                     <RecruiterDashboard />
                   </DashboardLayout>
@@ -108,7 +108,7 @@ const App = () => {
             {/* Admin Platform Control Panel */}
             <Route path="/admin" element={
               <ProtectedRoute>
-                <RoleRoute allowedRoles={['admin']}>
+                <RoleRoute allowedRoles={[ 'admin' ]}>
                   <DashboardLayout>
                     <AdminDashboard />
                   </DashboardLayout>
@@ -117,7 +117,7 @@ const App = () => {
             } />
             <Route path="/admin/users" element={
               <ProtectedRoute>
-                <RoleRoute allowedRoles={['admin']}>
+                <RoleRoute allowedRoles={[ 'admin' ]}>
                   <DashboardLayout>
                     <AdminUsers />
                   </DashboardLayout>
@@ -126,7 +126,7 @@ const App = () => {
             } />
             <Route path="/admin/logs" element={
               <ProtectedRoute>
-                <RoleRoute allowedRoles={['admin']}>
+                <RoleRoute allowedRoles={[ 'admin' ]}>
                   <DashboardLayout>
                     <AdminLogs />
                   </DashboardLayout>
@@ -135,7 +135,7 @@ const App = () => {
             } />
             <Route path="/admin/candidates" element={
               <ProtectedRoute>
-                <RoleRoute allowedRoles={['admin']}>
+                <RoleRoute allowedRoles={[ 'admin' ]}>
                   <DashboardLayout>
                     <AdminCandidates />
                   </DashboardLayout>
@@ -144,7 +144,7 @@ const App = () => {
             } />
             <Route path="/admin/announcements" element={
               <ProtectedRoute>
-                <RoleRoute allowedRoles={['admin']}>
+                <RoleRoute allowedRoles={[ 'admin' ]}>
                   <DashboardLayout>
                     <AdminAnnouncements />
                   </DashboardLayout>

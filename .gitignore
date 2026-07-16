@@ -36,3 +36,7 @@ out/
 # OS Files
 .DS_Store
 Thumbs.db
+
+# Local database
+backend/src/models/mock_db.json
+
