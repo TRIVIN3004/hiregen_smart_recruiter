@@ -272,6 +272,9 @@ class DocumentInstance {
   toJSON() {
     const copy = { ...this };
     delete copy._table;
+    if (this.id) {
+      copy._id = this.id;
+    }
     return copy;
   }
 }
