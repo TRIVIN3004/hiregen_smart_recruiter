@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { User, Mail, Lock, ArrowRight, AlertCircle, Loader, UserSquare, ShieldCheck } from 'lucide-react';
+import { User, Mail, Lock, ArrowRight, AlertCircle, Loader, UserSquare, Briefcase } from 'lucide-react';
 
 const Register = () => {
   const { register } = useAuth();
@@ -32,7 +32,7 @@ const Register = () => {
     setLoading(false);
 
     if (result.success) {
-      if (role === 'admin') navigate('/admin');
+      if (role === 'recruiter') navigate('/recruiter');
       else navigate('/candidate');
     } else {
       setError(result.error);
@@ -81,14 +81,14 @@ const Register = () => {
 
                 <button
                   type="button"
-                  onClick={() => setRole('admin')}
+                  onClick={() => setRole('recruiter')}
                   className={`flex flex-col items-center gap-2 p-3.5 rounded-xl border text-xs font-semibold transition-all duration-200
-                    ${role === 'admin' 
-                      ? 'bg-red-600/10 border-red-500 text-red-400 shadow-lg shadow-red-500/5' 
+                    ${role === 'recruiter' 
+                      ? 'bg-amber-600/10 border-amber-500 text-amber-400 shadow-lg shadow-amber-500/5' 
                       : 'bg-slate-900/40 border-slate-800 text-slate-500 hover:text-slate-350 hover:bg-slate-900'}`}
                 >
-                  <ShieldCheck size={18} />
-                  <span>Admin</span>
+                  <Briefcase size={18} />
+                  <span>Recruiter</span>
                 </button>
               </div>
             </div>

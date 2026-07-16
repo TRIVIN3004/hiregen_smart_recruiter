@@ -1,5 +1,50 @@
 const supabase = require('../config/supabase');
 const bcrypt = require('bcryptjs');
+const fs = require('fs');
+const path = require('path');
+
+const isPlaceholder = !process.env.SUPABASE_URL || !process.env.SUPABASE_KEY || process.env.SUPABASE_URL.includes('placeholder');
+const dbFilePath = path.join(__dirname, 'mock_db.json');
+
+const MEMORY_DB = loadMockDb();
+
+function loadMockDb() {
+  try {
+    let db = {};
+    if (fs.existsSync(dbFilePath)) {
+      db = JSON.parse(fs.readFileSync(dbFilePath, 'utf8'));
+    }
+    
+    if (!db.users) db.users = [];
+    const hasAdmin = db.users.some(u => u.email === 'testing@nexora.com');
+    if (!hasAdmin) {
+      const salt = bcrypt.genSaltSync(10);
+      const hashedPassword = bcrypt.hashSync('Trivin@123', salt);
+      db.users.push({
+        id: require('crypto').randomUUID(),
+        name: 'System Administrator',
+        email: 'testing@nexora.com',
+        password: hashedPassword,
+        role: 'admin',
+        is_verified: true,
+        created_at: new Date().toISOString()
+      });
+      fs.writeFileSync(dbFilePath, JSON.stringify(db, null, 2), 'utf8');
+    }
+    return db;
+  } catch (e) {
+    console.error('Error loading mock database:', e);
+  }
+  return {};
+}
+
+function saveMockDb() {
+  try {
+    fs.writeFileSync(dbFilePath, JSON.stringify(MEMORY_DB, null, 2), 'utf8');
+  } catch (e) {
+    console.error('Error saving mock database:', e);
+  }
+}
 
 function toSnakeCase(str) {
   return str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
@@ -151,6 +196,25 @@ class DocumentInstance {
       this.password = await bcrypt.hash(this.password, salt);
     }
 
+    if (isPlaceholder) {
+      if (!MEMORY_DB[this._table]) MEMORY_DB[this._table] = [];
+      const payload = toSnakeCasePayload(this);
+      if (this.id) {
+        const index = MEMORY_DB[this._table].findIndex(item => item.id === this.id);
+        if (index !== -1) {
+          MEMORY_DB[this._table][index] = { ...MEMORY_DB[this._table][index], ...payload };
+          Object.assign(this, toCamelCasePayload(MEMORY_DB[this._table][index]));
+        }
+      } else {
+        payload.id = require('crypto').randomUUID();
+        payload.created_at = new Date().toISOString();
+        MEMORY_DB[this._table].push(payload);
+        Object.assign(this, toCamelCasePayload(payload));
+      }
+      saveMockDb();
+      return this;
+    }
+
     const payload = toSnakeCasePayload(this);
     let query;
     if (this.id) {
@@ -218,6 +282,122 @@ class QueryBuilder {
   }
 
   async execute() {
+    if (isPlaceholder) {
+      if (!MEMORY_DB[this.table]) MEMORY_DB[this.table] = [];
+      let list = [...MEMORY_DB[this.table]];
+
+      // Apply main filters
+      for (const key in this.filter) {
+        if (key === '$or') continue;
+        const val = this.filter[key];
+        let dbKey = toSnakeCase(key);
+        if (key === 'user') dbKey = 'user_id';
+        else if (key === 'company') dbKey = 'company_id';
+        else if (key === 'job') dbKey = 'job_id';
+        else if (key === 'candidate') dbKey = 'candidate_id';
+        else if (key === 'actor') dbKey = 'actor_id';
+        else if (key === 'sender') dbKey = 'sender_id';
+        else if (key === 'createdBy') dbKey = 'created_by';
+
+        if (val && typeof val === 'object' && !Array.isArray(val)) {
+          if (val.$regex) {
+            const regexStr = val.$regex;
+            list = list.filter(item => {
+              const valStr = String(item[dbKey] || '');
+              return valStr.toLowerCase().includes(regexStr.toLowerCase());
+            });
+          } else {
+            for (const op in val) {
+              if (op === '$gt') {
+                list = list.filter(item => new Date(item[dbKey]) > new Date(val[op]));
+              } else if (op === '$lt') {
+                list = list.filter(item => new Date(item[dbKey]) < new Date(val[op]));
+              } else if (op === '$gte') {
+                list = list.filter(item => new Date(item[dbKey]) >= new Date(val[op]));
+              } else if (op === '$lte') {
+                list = list.filter(item => new Date(item[dbKey]) <= new Date(val[op]));
+              }
+            }
+          }
+        } else {
+          list = list.filter(item => item[dbKey] === val);
+        }
+      }
+
+      // Apply OR filter if present
+      if (this.filter.$or) {
+        list = list.filter(item => {
+          return this.filter.$or.some(cond => {
+            for (const k in cond) {
+              const v = cond[k];
+              let dbK = toSnakeCase(k);
+              if (k === 'user') dbK = 'user_id';
+              else if (k === 'company') dbK = 'company_id';
+              else if (k === 'job') dbK = 'job_id';
+              else if (k === 'candidate') dbK = 'candidate_id';
+
+              if (v && typeof v === 'object' && v.$regex) {
+                return String(item[dbK] || '').toLowerCase().includes(v.$regex.toLowerCase());
+              } else {
+                return item[dbK] === v;
+              }
+            }
+            return false;
+          });
+        });
+      }
+
+      // Sorting
+      if (this.sortOption) {
+        let isDesc = false;
+        let field = '';
+        if (typeof this.sortOption === 'string') {
+          isDesc = this.sortOption.startsWith('-');
+          field = isDesc ? this.sortOption.substring(1) : this.sortOption;
+        } else if (typeof this.sortOption === 'object') {
+          const firstKey = Object.keys(this.sortOption)[0];
+          isDesc = this.sortOption[firstKey] === -1 || this.sortOption[firstKey] === 'desc';
+          field = firstKey;
+        }
+        const col = toSnakeCase(field);
+        list.sort((a, b) => {
+          const valA = a[col];
+          const valB = b[col];
+          if (valA < valB) return isDesc ? 1 : -1;
+          if (valA > valB) return isDesc ? -1 : 1;
+          return 0;
+        });
+      }
+
+      if (this.limitCount) {
+        list = list.slice(0, this.limitCount);
+      }
+
+      if (this.mode === 'one') {
+        const item = list[0] || null;
+        if (!item) return null;
+        const payload = toCamelCasePayload(item);
+        if (this.table === 'users' && !this.explicitPassword) {
+          delete payload.password;
+        }
+        const instance = new DocumentInstance(this.table, payload);
+        await this._handlePopulations(instance);
+        return instance;
+      } else {
+        const instances = list.map(item => {
+          const payload = toCamelCasePayload(item);
+          if (this.table === 'users' && !this.explicitPassword) {
+            delete payload.password;
+          }
+          return new DocumentInstance(this.table, payload);
+        });
+        for (const inst of instances) {
+          await this._handlePopulations(inst);
+        }
+        return instances;
+      }
+    }
+
     let query = supabase.from(this.table).select(this.selectFields);
 
     // Apply main filters
@@ -342,6 +522,45 @@ class QueryBuilder {
         rel = rel.path;
       }
 
+      if (isPlaceholder) {
+        if (rel === 'company' && instance.company) {
+          const list = MEMORY_DB['companies'] || [];
+          const data = list.find(item => item.id === instance.company);
+          if (data) instance.company = new DocumentInstance('companies', toCamelCasePayload(data));
+        }
+        if (rel === 'user' && instance.user) {
+          const list = MEMORY_DB['users'] || [];
+          const data = list.find(item => item.id === instance.user);
+          if (data) instance.user = new DocumentInstance('users', toCamelCasePayload(data));
+        }
+        if (rel === 'job' && instance.job) {
+          const list = MEMORY_DB['jobs'] || [];
+          const data = list.find(item => item.id === instance.job);
+          if (data) instance.job = new DocumentInstance('jobs', toCamelCasePayload(data));
+        }
+        if (rel === 'actor' && instance.actor) {
+          const list = MEMORY_DB['users'] || [];
+          const data = list.find(item => item.id === instance.actor);
+          if (data) instance.actor = new DocumentInstance('users', toCamelCasePayload(data));
+        }
+        if (rel === 'recruiter' && instance.recruiter) {
+          const list = MEMORY_DB['users'] || [];
+          const data = list.find(item => item.id === instance.recruiter);
+          if (data) instance.recruiter = new DocumentInstance('users', toCamelCasePayload(data));
+        }
+        if (rel === 'candidate' && instance.candidate) {
+          const list = MEMORY_DB['users'] || [];
+          const data = list.find(item => item.id === instance.candidate);
+          if (data) instance.candidate = new DocumentInstance('users', toCamelCasePayload(data));
+        }
+        if (rel === 'createdBy' && instance.createdBy) {
+          const list = MEMORY_DB['users'] || [];
+          const data = list.find(item => item.id === instance.createdBy);
+          if (data) instance.createdBy = new DocumentInstance('users', toCamelCasePayload(data));
+        }
+        continue;
+      }
+
       if (rel === 'company' && instance.company) {
         const { data, error } = await supabase.from('companies').select('*').eq('id', instance.company).maybeSingle();
         if (!error && data) {
@@ -399,6 +618,16 @@ class SupabaseModel {
       data.password = await bcrypt.hash(data.password, salt);
     }
 
+    if (isPlaceholder) {
+      if (!MEMORY_DB[this.table]) MEMORY_DB[this.table] = [];
+      const payload = toSnakeCasePayload(data);
+      payload.id = require('crypto').randomUUID();
+      payload.created_at = new Date().toISOString();
+      MEMORY_DB[this.table].push(payload);
+      saveMockDb();
+      return new DocumentInstance(this.table, toCamelCasePayload(payload));
+    }
+
     const payload = toSnakeCasePayload(data);
     const { data: inserted, error } = await supabase
       .from(this.table)
@@ -412,6 +641,12 @@ class SupabaseModel {
 
   async findById(id) {
     if (!id) return null;
+    if (isPlaceholder) {
+      if (!MEMORY_DB[this.table]) MEMORY_DB[this.table] = [];
+      const item = MEMORY_DB[this.table].find(item => item.id === id);
+      return item ? new DocumentInstance(this.table, toCamelCasePayload(item)) : null;
+    }
+
     const { data, error } = await supabase
       .from(this.table)
       .select('*')
@@ -431,6 +666,20 @@ class SupabaseModel {
   }
 
   async countDocuments(filter = {}) {
+    if (isPlaceholder) {
+      if (!MEMORY_DB[this.table]) MEMORY_DB[this.table] = [];
+      let list = [...MEMORY_DB[this.table]];
+      for (const key in filter) {
+        let dbKey = toSnakeCase(key);
+        if (key === 'user') dbKey = 'user_id';
+        else if (key === 'company') dbKey = 'company_id';
+        else if (key === 'job') dbKey = 'job_id';
+        else if (key === 'candidate') dbKey = 'candidate_id';
+        list = list.filter(item => item[dbKey] === filter[key]);
+      }
+      return list.length;
+    }
+
     let query = supabase.from(this.table).select('*', { count: 'exact', head: true });
     for (const key in filter) {
       let dbKey = toSnakeCase(key);
@@ -446,6 +695,21 @@ class SupabaseModel {
   }
 
   async deleteOne(filter) {
+    if (isPlaceholder) {
+      if (!MEMORY_DB[this.table]) MEMORY_DB[this.table] = [];
+      const index = MEMORY_DB[this.table].findIndex(item => {
+        for (const key in filter) {
+          if (item[toSnakeCase(key)] !== filter[key]) return false;
+        }
+        return true;
+      });
+      if (index !== -1) {
+        MEMORY_DB[this.table].splice(index, 1);
+        saveMockDb();
+      }
+      return { deletedCount: index !== -1 ? 1 : 0 };
+    }
+
     let query = supabase.from(this.table).delete();
     for (const key in filter) {
       query = query.eq(toSnakeCase(key), filter[key]);
@@ -456,12 +720,32 @@ class SupabaseModel {
   }
 
   async findByIdAndDelete(id) {
+    if (isPlaceholder) {
+      if (!MEMORY_DB[this.table]) MEMORY_DB[this.table] = [];
+      const index = MEMORY_DB[this.table].findIndex(item => item.id === id);
+      if (index !== -1) {
+        MEMORY_DB[this.table].splice(index, 1);
+        saveMockDb();
+      }
+      return { success: true };
+    }
+
     const { error } = await supabase.from(this.table).delete().eq('id', id);
     if (error) throw new Error(error.message);
     return { success: true };
   }
 
   async findByIdAndUpdate(id, updateData, options = {}) {
+    if (isPlaceholder) {
+      if (!MEMORY_DB[this.table]) MEMORY_DB[this.table] = [];
+      const index = MEMORY_DB[this.table].findIndex(item => item.id === id);
+      if (index === -1) return null;
+      const payload = toSnakeCasePayload(updateData);
+      MEMORY_DB[this.table][index] = { ...MEMORY_DB[this.table][index], ...payload };
+      saveMockDb();
+      return new DocumentInstance(this.table, toCamelCasePayload(MEMORY_DB[this.table][index]));
+    }
+
     const payload = toSnakeCasePayload(updateData);
     const { data, error } = await supabase
       .from(this.table)

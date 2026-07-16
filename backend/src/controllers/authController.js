@@ -16,8 +16,8 @@ exports.register = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
 
-    // Only candidate and admin roles may self-register through this platform
-    const allowedRoles = ['candidate', 'admin'];
+    // Only candidate and recruiter roles may self-register through this platform
+    const allowedRoles = ['candidate', 'recruiter'];
     const resolvedRole = allowedRoles.includes(role) ? role : 'candidate';
 
     // Check if user exists
