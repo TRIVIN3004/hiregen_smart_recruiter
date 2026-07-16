@@ -322,3 +322,276 @@ class GeminiService:
             },
             "detailedFeedback": []
         }
+
+    @classmethod
+    def generate_aptitude_questions(cls) -> list:
+        if use_fallback:
+            return cls._mock_aptitude_questions()
+
+        prompt = """
+        Generate 30 multiple choice aptitude questions for a recruitment assessment.
+        Provide a mixture of:
+        - 10 Quantitative Aptitude questions
+        - 10 Logical Reasoning questions
+        - 10 Verbal Ability questions
+
+        Return the result strictly as a JSON object containing a "questions" array matching this schema:
+        {
+            "questions": [
+                {
+                    "id": "q_1",
+                    "category": "Quantitative",
+                    "question": "Question text?",
+                    "options": ["Option A", "Option B", "Option C", "Option D"],
+                    "correctIndex": 0
+                }
+            ]
+        }
+        Do not add any markdown formatting, prefix, or suffix text. Just return raw JSON.
+        """
+        try:
+            raw_response = cls._call_llm(prompt)
+            parsed = json.loads(raw_response)
+            questions = parsed.get("questions", [])
+            if len(questions) > 0:
+                # Ensure all questions have correct format
+                for idx, q in enumerate(questions):
+                    if not q.get("id"):
+                        q["id"] = f"q_{idx+1}"
+                return questions
+            return cls._mock_aptitude_questions()
+        except Exception as e:
+            logger.error(f"Failed to generate aptitude questions dynamically: {e}")
+            return cls._mock_aptitude_questions()
+
+    @classmethod
+    def evaluate_aptitude_test(cls, answers: list) -> dict:
+        total_questions = len(answers)
+        correct_answers = 0
+        for ans in answers:
+            selected = ans.get("selectedIndex")
+            correct = ans.get("correctIndex")
+            if selected is not None and selected == correct:
+                correct_answers += 1
+        
+        passed = correct_answers >= 15
+        return {
+            "totalQuestions": total_questions,
+            "correctAnswers": correct_answers,
+            "passed": passed
+        }
+
+    @staticmethod
+    def _mock_aptitude_questions() -> list:
+        return [
+            {
+                "id": "mock_q1",
+                "category": "Quantitative",
+                "question": "A train running at the speed of 60 km/hr crosses a pole in 9 seconds. What is the length of the train?",
+                "options": ["120 metres", "150 metres", "324 metres", "180 metres"],
+                "correctIndex": 1
+            },
+            {
+                "id": "mock_q2",
+                "category": "Quantitative",
+                "question": "The average of 20 numbers is zero. Of them, at the most, how many may be greater than zero?",
+                "options": ["0", "1", "10", "19"],
+                "correctIndex": 3
+            },
+            {
+                "id": "mock_q3",
+                "category": "Quantitative",
+                "question": "A sum of money at simple interest amounts to Rs. 815 in 3 years and to Rs. 854 in 4 years. The sum is:",
+                "options": ["Rs. 650", "Rs. 690", "Rs. 698", "Rs. 700"],
+                "correctIndex": 2
+            },
+            {
+                "id": "mock_q4",
+                "category": "Quantitative",
+                "question": "A, B and C can do a piece of work in 20, 30 and 60 days respectively. In how many days can A do the work if he is assisted by B and C on every third day?",
+                "options": ["12 days", "15 days", "16 days", "18 days"],
+                "correctIndex": 1
+            },
+            {
+                "id": "mock_q5",
+                "category": "Quantitative",
+                "question": "If 20% of a = b, then b% of 20 is the same as:",
+                "options": ["4% of a", "5% of a", "20% of a", "None of these"],
+                "correctIndex": 0
+            },
+            {
+                "id": "mock_q6",
+                "category": "Quantitative",
+                "question": "A fruit seller had some apples. He sells 40% apples and still has 420 apples. Originally, he had:",
+                "options": ["588 apples", "600 apples", "672 apples", "700 apples"],
+                "correctIndex": 3
+            },
+            {
+                "id": "mock_q7",
+                "category": "Quantitative",
+                "question": "Find the greatest number that will divide 43, 91 and 183 so as to leave the same remainder in each case.",
+                "options": ["4", "7", "9", "13"],
+                "correctIndex": 0
+            },
+            {
+                "id": "mock_q8",
+                "category": "Quantitative",
+                "question": "The H.C.F. of two numbers is 11 and their L.C.M. is 7700. If one of the numbers is 275, then the other is:",
+                "options": ["279", "283", "308", "318"],
+                "correctIndex": 2
+            },
+            {
+                "id": "mock_q9",
+                "category": "Quantitative",
+                "question": "A grocer has a sale of Rs. 6435, Rs. 6927, Rs. 6855, Rs. 7230 and Rs. 6562 for 5 consecutive months. How much sale must he have in the sixth month so that he gets an average sale of Rs. 6500?",
+                "options": ["Rs. 4991", "Rs. 5991", "Rs. 6001", "Rs. 6991"],
+                "correctIndex": 0
+            },
+            {
+                "id": "mock_q10",
+                "category": "Quantitative",
+                "question": "A is two years older than B who is twice as old as C. If the total of the ages of A, B and C be 27, then how old is B?",
+                "options": ["7", "8", "9", "10"],
+                "correctIndex": 3
+            },
+            {
+                "id": "mock_q11",
+                "category": "Logical Reasoning",
+                "question": "Look at this series: 2, 1, (1/2), (1/4), ... What number should come next?",
+                "options": ["(1/3)", "(1/8)", "(2/8)", "(1/16)"],
+                "correctIndex": 1
+            },
+            {
+                "id": "mock_q12",
+                "category": "Logical Reasoning",
+                "question": "Look at this series: 7, 10, 8, 11, 9, 12, ... What number should come next?",
+                "options": ["7", "10", "12", "13"],
+                "correctIndex": 1
+            },
+            {
+                "id": "mock_q13",
+                "category": "Logical Reasoning",
+                "question": "Look at this series: 36, 34, 30, 28, 24, ... What number should come next?",
+                "options": ["20", "22", "23", "26"],
+                "correctIndex": 1
+            },
+            {
+                "id": "mock_q14",
+                "category": "Logical Reasoning",
+                "question": "Look at this series: 53, 53, 40, 40, 27, 27, ... What number should come next?",
+                "options": ["12", "14", "27", "53"],
+                "correctIndex": 1
+            },
+            {
+                "id": "mock_q15",
+                "category": "Logical Reasoning",
+                "question": "Look at this series: 21, 9, 21, 11, 21, 13, 21, ... What number should come next?",
+                "options": ["14", "15", "21", "25"],
+                "correctIndex": 1
+            },
+            {
+                "id": "mock_q16",
+                "category": "Logical Reasoning",
+                "question": "Which word does NOT belong with the others?",
+                "options": ["parsley", "basil", "dill", "mayonnaise"],
+                "correctIndex": 3
+            },
+            {
+                "id": "mock_q17",
+                "category": "Logical Reasoning",
+                "question": "Which word does NOT belong with the others?",
+                "options": ["tulip", "rose", "bud", "daisy"],
+                "correctIndex": 2
+            },
+            {
+                "id": "mock_q18",
+                "category": "Logical Reasoning",
+                "question": "Which word does NOT belong with the others?",
+                "options": ["guitar", "violin", "flute", "cello"],
+                "correctIndex": 2
+            },
+            {
+                "id": "mock_q19",
+                "category": "Logical Reasoning",
+                "question": "Which word does NOT belong with the others?",
+                "options": ["dodge", "flee", "duck", "avoid"],
+                "correctIndex": 1
+            },
+            {
+                "id": "mock_q20",
+                "category": "Logical Reasoning",
+                "question": "Which word does NOT belong with the others?",
+                "options": ["branch", "dirt", "leaf", "root"],
+                "correctIndex": 1
+            },
+            {
+                "id": "mock_q21",
+                "category": "Verbal",
+                "question": "Find the synonym of 'ABANDON':",
+                "options": ["Retain", "Forsake", "Keep", "Cherish"],
+                "correctIndex": 1
+            },
+            {
+                "id": "mock_q22",
+                "category": "Verbal",
+                "question": "Find the synonym of 'BENEFACTOR':",
+                "options": ["Helper", "Opponent", "Rival", "Enemy"],
+                "correctIndex": 0
+            },
+            {
+                "id": "mock_q23",
+                "category": "Verbal",
+                "question": "Find the antonym of 'ARTIFICIAL':",
+                "options": ["Synthetic", "Natural", "Bogus", "Unnatural"],
+                "correctIndex": 1
+            },
+            {
+                "id": "mock_q24",
+                "category": "Verbal",
+                "question": "Find the antonym of 'EXPAND':",
+                "options": ["Grow", "Stretch", "Shrink", "Inflate"],
+                "correctIndex": 2
+            },
+            {
+                "id": "mock_q25",
+                "category": "Verbal",
+                "question": "Choose the word that is correctly spelled:",
+                "options": ["Accomodate", "Acommodate", "Accommodate", "Acomodate"],
+                "correctIndex": 2
+            },
+            {
+                "id": "mock_q26",
+                "category": "Verbal",
+                "question": "Choose the word that is correctly spelled:",
+                "options": ["Receive", "Recieve", "Receve", "Reiceve"],
+                "correctIndex": 0
+            },
+            {
+                "id": "mock_q27",
+                "category": "Verbal",
+                "question": "Complete the sentence: 'The committee _______ unable to reach a consensus.'",
+                "options": ["was", "were", "has", "have"],
+                "correctIndex": 0
+            },
+            {
+                "id": "mock_q28",
+                "category": "Verbal",
+                "question": "Neither of the candidates _______ suitable for the job.",
+                "options": ["are", "is", "were", "been"],
+                "correctIndex": 1
+            },
+            {
+                "id": "mock_q29",
+                "category": "Verbal",
+                "question": "Find the synonym of 'GENEROUS':",
+                "options": ["Selfish", "Magnanimous", "Stingy", "Mean"],
+                "correctIndex": 1
+            },
+            {
+                "id": "mock_q30",
+                "category": "Verbal",
+                "question": "Complete the analogy: 'Scribble is to Write as Stammer is to _______'",
+                "options": ["Walk", "Speak", "Play", "Sleep"],
+                "correctIndex": 1
+            }
+        ]

@@ -5,7 +5,7 @@ const AuditLog = require('../models/auditLog');
 const Company = require('../models/company');
 const { InterviewResult, CodingResult, AptitudeResult } = require('../models/results');
 const Notification = require('../models/notification');
-const Announcement = require('../models/announcement');
+const Announcement = require('../models/Announcement');
 
 // Helper to log audit events
 const logAuditEvent = async (actorId, action, details) => {

@@ -26,6 +26,14 @@ class CodingEvaluationRequest(BaseModel):
     language: str
     code: str
 
+class AptitudeAnswer(BaseModel):
+    questionId: str
+    selectedIndex: Optional[int] = None
+    correctIndex: int
+
+class AptitudeEvaluationRequest(BaseModel):
+    answers: List[AptitudeAnswer]
+
 def extract_text_from_pdf(file_bytes: bytes, filename: str) -> str:
     """
     Extracts text from PDF bytes using fitz (PyMuPDF) and falls back to pdfplumber.
@@ -133,4 +141,29 @@ async def evaluate_coding(request: CodingEvaluationRequest):
         }
     except Exception as e:
         logger.error(f"Error evaluating coding test: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/aptitude/generate")
+async def generate_aptitude():
+    try:
+        questions = GeminiService.generate_aptitude_questions()
+        return {
+            "success": True,
+            "questions": questions
+        }
+    except Exception as e:
+        logger.error(f"Error generating aptitude questions: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/aptitude/evaluate")
+async def evaluate_aptitude(request: AptitudeEvaluationRequest):
+    try:
+        answers_dicts = [item.dict() for item in request.answers]
+        evaluation = GeminiService.evaluate_aptitude_test(answers_dicts)
+        return {
+            "success": True,
+            **evaluation
+        }
+    except Exception as e:
+        logger.error(f"Error evaluating aptitude: {e}")
         raise HTTPException(status_code=500, detail=str(e))
